@@ -1,0 +1,957 @@
+<!DOCTYPE html>
+<html lang="da">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>❤️ Hjerte Crush</title>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Fredoka+One&family=Nunito:wght@400;700;900&display=swap');
+
+  :root {
+    --bg: #1a0a2e;
+    --panel: #2d1052;
+    --accent: #ff3d7f;
+    --gold: #ffd700;
+    --glow: #ff6eb4;
+    --radius: 16px;
+  }
+
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+
+  html, body { height: 100%; overflow: hidden; }
+
+  body {
+    background: var(--bg);
+    background-image:
+      radial-gradient(ellipse at 20% 10%, #3d0a5e 0%, transparent 50%),
+      radial-gradient(ellipse at 80% 90%, #5e0a3d 0%, transparent 50%);
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    font-family: 'Nunito', sans-serif;
+    color: white;
+    padding: 12px;
+    user-select: none;
+    touch-action: none;
+    gap: 10px;
+  }
+
+  h1 {
+    font-family: 'Fredoka One', cursive;
+    font-size: clamp(1.6rem, 5vw, 3rem);
+    color: var(--accent);
+    text-shadow: 0 0 30px var(--glow), 0 4px 0 #8b0040;
+    letter-spacing: 2px;
+    line-height: 1;
+    flex-shrink: 0;
+  }
+
+  .hud { display: flex; gap: 16px; flex-shrink: 0; }
+
+  .hud-box {
+    background: var(--panel);
+    border: 2px solid rgba(255,61,127,0.4);
+    border-radius: var(--radius);
+    padding: 6px 18px;
+    text-align: center;
+    box-shadow: 0 0 20px rgba(255,61,127,0.2);
+    min-width: 80px;
+  }
+
+  .hud-label {
+    font-size: 0.65rem;
+    text-transform: uppercase;
+    letter-spacing: 2px;
+    color: rgba(255,255,255,0.5);
+    margin-bottom: 1px;
+  }
+
+  .hud-value {
+    font-family: 'Fredoka One', cursive;
+    font-size: 1.6rem;
+    color: var(--gold);
+    text-shadow: 0 0 10px rgba(255,215,0,0.6);
+    line-height: 1;
+    display: block;
+    min-height: 1.6rem;
+  }
+
+  .hud-value.moves-low { color: var(--accent); animation: blink 0.6s ease-in-out infinite; }
+  @keyframes blink { 0%,100%{opacity:1} 50%{opacity:0.4} }
+
+  .progress-wrap {
+    width: min(420px, 90vw);
+    background: rgba(255,255,255,0.1);
+    border-radius: 50px;
+    height: 8px;
+    overflow: hidden;
+    flex-shrink: 0;
+  }
+
+  #progress-bar {
+    height: 100%;
+    background: linear-gradient(90deg, var(--accent), var(--gold));
+    border-radius: 50px;
+    transition: width 0.4s ease;
+    box-shadow: 0 0 12px rgba(255,215,0,0.5);
+  }
+
+  #board-wrapper { position: relative; flex-shrink: 0; }
+
+  #board {
+    display: grid;
+    grid-template-columns: repeat(7, 1fr);
+    gap: 5px;
+    background: var(--panel);
+    border: 2px solid rgba(255,61,127,0.3);
+    border-radius: 20px;
+    padding: 10px;
+    box-shadow: 0 0 60px rgba(255,61,127,0.3), inset 0 0 40px rgba(0,0,0,0.5);
+    touch-action: none;
+  }
+
+  .cell {
+    width: clamp(40px, 9vw, 58px);
+    height: clamp(40px, 9vw, 58px);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: clamp(1.3rem, 3.2vw, 2rem);
+    border-radius: 12px;
+    cursor: grab;
+    background: rgba(255,255,255,0.04);
+    border: 2px solid transparent;
+    position: relative;
+  }
+
+  /* Sun joker cell gets special glow */
+  .cell.sun-cell {
+    background: rgba(255, 220, 0, 0.12);
+    border-color: rgba(255,220,0,0.5);
+    box-shadow: 0 0 14px rgba(255,200,0,0.4);
+    animation: sun-pulse 1.4s ease-in-out infinite;
+  }
+
+  @keyframes sun-pulse {
+    0%,100% { box-shadow: 0 0 14px rgba(255,200,0,0.4); }
+    50%      { box-shadow: 0 0 28px rgba(255,200,0,0.8), 0 0 8px rgba(255,255,100,0.6); }
+  }
+
+  .cell.pressing {
+    border-color: var(--gold);
+    background: rgba(255,215,0,0.15);
+    box-shadow: 0 0 18px rgba(255,215,0,0.6);
+    transform: scale(1.12);
+    transition: transform 0.1s, box-shadow 0.1s;
+  }
+
+  .cell.matched { animation: pop 0.4s ease forwards; }
+  @keyframes pop {
+    0%  { transform:scale(1);   opacity:1; }
+    40% { transform:scale(1.4); opacity:1; }
+    100%{ transform:scale(0);   opacity:0; }
+  }
+
+  /* Sun diagonal clear — flash gold then pop */
+  .cell.sun-clear { animation: sun-zap 0.55s ease forwards; }
+  @keyframes sun-zap {
+    0%  { transform:scale(1);   background:rgba(255,220,0,0.0); opacity:1; }
+    30% { transform:scale(1.3); background:rgba(255,220,0,0.7); opacity:1; box-shadow:0 0 20px gold; }
+    100%{ transform:scale(0);   background:rgba(255,220,0,0.0); opacity:0; }
+  }
+
+  .cell.drop-in { animation: drop 0.35s cubic-bezier(0.34,1.56,0.64,1) forwards; }
+  @keyframes drop {
+    0%  { transform:translateY(-80px) scale(0.7); opacity:0; }
+    100%{ transform:translateY(0) scale(1); opacity:1; }
+  }
+
+  .cell.swap-right { animation: swapRight 0.2s ease forwards; }
+  .cell.swap-left  { animation: swapLeft  0.2s ease forwards; }
+  .cell.swap-down  { animation: swapDown  0.2s ease forwards; }
+  .cell.swap-up    { animation: swapUp    0.2s ease forwards; }
+
+  @keyframes swapRight { 0%{transform:translateX(0)} 50%{transform:translateX(60%)} 100%{transform:translateX(0)} }
+  @keyframes swapLeft  { 0%{transform:translateX(0)} 50%{transform:translateX(-60%)} 100%{transform:translateX(0)} }
+  @keyframes swapDown  { 0%{transform:translateY(0)} 50%{transform:translateY(60%)} 100%{transform:translateY(0)} }
+  @keyframes swapUp    { 0%{transform:translateY(0)} 50%{transform:translateY(-60%)} 100%{transform:translateY(0)} }
+  @keyframes shake { 0%,100%{transform:translateX(0)} 25%{transform:translateX(-6px)} 75%{transform:translateX(6px)} }
+
+  .score-popup {
+    position: absolute;
+    font-family: 'Fredoka One', cursive;
+    font-size: 1.5rem;
+    color: var(--gold);
+    text-shadow: 0 0 10px rgba(255,215,0,0.8);
+    pointer-events: none;
+    animation: float-up 1s ease forwards;
+    z-index: 10;
+    white-space: nowrap;
+  }
+  @keyframes float-up {
+    0%  { transform:translateY(0) scale(1);   opacity:1; }
+    100%{ transform:translateY(-80px) scale(1.3); opacity:0; }
+  }
+
+  .controls { display: flex; gap: 12px; flex-shrink: 0; }
+
+  button {
+    font-family: 'Fredoka One', cursive;
+    font-size: 0.95rem;
+    padding: 10px 24px;
+    border: none;
+    border-radius: 50px;
+    cursor: pointer;
+    transition: transform 0.1s, box-shadow 0.1s;
+  }
+  button:hover  { transform: scale(1.05); }
+  button:active { transform: scale(0.97); }
+
+  #btn-new  { background: linear-gradient(135deg,#ff3d7f,#ff006e); color:white; box-shadow:0 4px 20px rgba(255,61,127,0.5); }
+  #btn-hint { background: linear-gradient(135deg,#a855f7,#7c3aed); color:white; box-shadow:0 4px 20px rgba(168,85,247,0.4); }
+
+  #combo-flash {
+    position: fixed; top:50%; left:50%;
+    transform: translate(-50%,-50%);
+    font-family: 'Fredoka One', cursive;
+    font-size: clamp(2rem,6vw,3rem);
+    color: white;
+    text-shadow: 0 0 30px var(--glow);
+    pointer-events: none;
+    z-index: 50;
+    display: none;
+  }
+  @keyframes combo-anim {
+    0%  { transform:translate(-50%,-50%) scale(0.5); opacity:1; }
+    60% { transform:translate(-50%,-60%) scale(1.3); opacity:1; }
+    100%{ transform:translate(-50%,-70%) scale(1);   opacity:0; }
+  }
+
+  #overlay {
+    display: none;
+    position: fixed; inset:0;
+    background: rgba(10,0,25,0.88);
+    backdrop-filter: blur(6px);
+    z-index: 100;
+    align-items: center; justify-content: center;
+    flex-direction: column; gap:20px;
+  }
+  #overlay.show { display: flex; }
+
+  .overlay-title {
+    font-family: 'Fredoka One', cursive;
+    font-size: clamp(2.2rem,7vw,4.5rem);
+    text-align: center;
+  }
+  .overlay-score {
+    font-family: 'Fredoka One', cursive;
+    font-size: 1.8rem; color: var(--gold);
+    text-shadow: 0 0 20px rgba(255,215,0,0.7);
+  }
+  .stars {
+    font-size: 2.8rem; letter-spacing:8px;
+    animation: star-pop 0.6s ease forwards;
+  }
+  @keyframes star-pop {
+    0%  { transform:scale(0); }
+    80% { transform:scale(1.2); }
+    100%{ transform:scale(1); }
+  }
+
+  /* ── Confetti canvas ── */
+  #confetti-canvas {
+    position: fixed;
+    inset: 0;
+    pointer-events: none;
+    z-index: 90; /* below overlay, above game */
+    display: none;
+  }
+
+  /* ── Sun beam overlay (shows on sun activation) ── */
+  #sun-beam {
+    position: fixed;
+    inset: 0;
+    pointer-events: none;
+    z-index: 60;
+    display: none;
+  }
+
+  /* Sun joker label in corner */
+  .sun-badge {
+    position: absolute;
+    top: -4px; right: -4px;
+    font-size: 0.55rem;
+    background: #ffd700;
+    color: #1a0a2e;
+    border-radius: 50%;
+    width: 14px; height: 14px;
+    display: flex; align-items: center; justify-content: center;
+    font-weight: 900;
+    line-height: 1;
+  }
+</style>
+</head>
+<body>
+
+<h1>❤️ Hjerte Crush</h1>
+
+<div class="hud">
+  <div class="hud-box">
+    <div class="hud-label">Mål</div>
+    <div class="hud-value" id="target-display">1000</div>
+  </div>
+  <div class="hud-box">
+    <div class="hud-label">Point</div>
+    <div class="hud-value" id="score-display">0</div>
+  </div>
+  <div class="hud-box">
+    <div class="hud-label">Træk</div>
+    <div class="hud-value" id="moves-display">30</div>
+  </div>
+</div>
+
+<div class="progress-wrap">
+  <div id="progress-bar" style="width:0%"></div>
+</div>
+
+<div id="board-wrapper">
+  <div id="board"></div>
+</div>
+
+<div class="controls">
+  <button id="btn-new">🔄 Nyt spil</button>
+  <button id="btn-hint">💡 Hint</button>
+</div>
+
+<div id="overlay">
+  <div class="overlay-title" id="overlay-title"></div>
+  <div class="stars" id="overlay-stars"></div>
+  <div class="overlay-score" id="overlay-score"></div>
+  <button id="btn-restart" style="background:linear-gradient(135deg,#ff3d7f,#ff006e);color:white;box-shadow:0 4px 20px rgba(255,61,127,0.5);font-size:1.1rem;padding:12px 32px;">
+    Spil igen ❤️
+  </button>
+</div>
+
+<div id="combo-flash"></div>
+<canvas id="confetti-canvas"></canvas>
+<canvas id="sun-beam"></canvas>
+
+<script>
+const COLS = 7, ROWS = 7;
+const HEARTS = ['❤️','🧡','💛','💚','💙','💜','🩷'];
+const SUN = '☀️';
+const SUN_SPAWN_CHANCE = 0.06; // 6% chance per new tile spawn
+const POINTS_3 = 60, POINTS_4 = 120, POINTS_5 = 250, POINTS_SUN = 400;
+const SWIPE_THRESHOLD = 12;
+
+let board = [], score = 0, moves = 30, target = 1000;
+let busy = false, combo = 0;
+let dragStart = null, draggingCell = null;
+
+const boardEl    = document.getElementById('board');
+const scoreEl    = document.getElementById('score-display');
+const movesEl    = document.getElementById('moves-display');
+const targetEl   = document.getElementById('target-display');
+const progressEl = document.getElementById('progress-bar');
+const overlay    = document.getElementById('overlay');
+const comboFlash = document.getElementById('combo-flash');
+const confettiCanvas = document.getElementById('confetti-canvas');
+const sunBeamCanvas  = document.getElementById('sun-beam');
+
+/* ─── Helpers ─── */
+function rnd(n) { return Math.floor(Math.random() * n); }
+function sleep(ms) { return new Promise(r => setTimeout(r, ms)); }
+function getCellEl(r, c) { return boardEl.children[r * COLS + c]; }
+
+/* ─── Board init ─── */
+function initBoard() {
+  board = [];
+  for (let r = 0; r < ROWS; r++) {
+    board[r] = [];
+    for (let c = 0; c < COLS; c++) board[r][c] = randomHeart(r, c);
+  }
+  let safety = 0;
+  while (findMatches().length > 0 && safety++ < 200) {
+    for (let r = 0; r < ROWS; r++)
+      for (let c = 0; c < COLS; c++)
+        if (isInMatch(r, c)) board[r][c] = randomHeart(r, c, true);
+  }
+}
+
+function randomHeart(r, c, avoidMatch = false) {
+  let pool = [...HEARTS];
+  if (avoidMatch) {
+    if (r >= 2 && board[r-1]?.[c] === board[r-2]?.[c]) pool = pool.filter(h => h !== board[r-2][c]);
+    if (c >= 2 && board[r]?.[c-1] === board[r]?.[c-2]) pool = pool.filter(h => h !== board[r][c-2]);
+    if (pool.length === 0) pool = [...HEARTS];
+  }
+  return pool[rnd(pool.length)];
+}
+
+function isInMatch(r, c) {
+  const h = board[r][c];
+  if (h === SUN) return false;
+  return (r >= 2 && board[r-1][c] === h && board[r-2][c] === h) ||
+         (c >= 2 && board[r][c-1] === h && board[r][c-2] === h);
+}
+
+/* ─── Match finding ─── */
+function findMatches() {
+  const matched = new Set();
+  for (let r = 0; r < ROWS; r++) {
+    for (let c = 0; c < COLS - 2; c++) {
+      const h = board[r][c];
+      if (!h || h === SUN) continue;
+      if (board[r][c+1] === h && board[r][c+2] === h) {
+        let len = 3;
+        while (c + len < COLS && board[r][c+len] === h) len++;
+        for (let i = 0; i < len; i++) matched.add(`${r},${c+i}`);
+      }
+    }
+  }
+  for (let r = 0; r < ROWS - 2; r++) {
+    for (let c = 0; c < COLS; c++) {
+      const h = board[r][c];
+      if (!h || h === SUN) continue;
+      if (board[r+1][c] === h && board[r+2][c] === h) {
+        let len = 3;
+        while (r + len < ROWS && board[r+len][c] === h) len++;
+        for (let i = 0; i < len; i++) matched.add(`${r+i},${c}`);
+      }
+    }
+  }
+  return [...matched].map(s => { const [r,c] = s.split(','); return { r:+r, c:+c }; });
+}
+
+function calcPoints(n) {
+  const mult = combo + 1;
+  if (n >= 5) return POINTS_5 * mult;
+  if (n === 4) return POINTS_4 * mult;
+  return POINTS_3 * mult;
+}
+
+/* ─── Render ─── */
+function render(animCells = {}) {
+  boardEl.innerHTML = '';
+  for (let r = 0; r < ROWS; r++) {
+    for (let c = 0; c < COLS; c++) {
+      const cell = document.createElement('div');
+      cell.className = 'cell';
+      const val = board[r][c] || '';
+      cell.textContent = val;
+      cell.dataset.r = r;
+      cell.dataset.c = c;
+      if (val === SUN) {
+        cell.classList.add('sun-cell');
+      }
+      const key = `${r},${c}`;
+      if (animCells[key]) cell.classList.add(animCells[key]);
+      boardEl.appendChild(cell);
+    }
+  }
+  scoreEl.textContent = score;
+  movesEl.textContent = moves;
+  targetEl.textContent = target;
+  movesEl.classList.toggle('moves-low', moves <= 5);
+  progressEl.style.width = Math.min(100, (score / target) * 100) + '%';
+}
+
+/* ─── Swipe input ─── */
+function getPointerCoords(e) {
+  if (e.touches && e.touches.length > 0) return { x: e.touches[0].clientX, y: e.touches[0].clientY };
+  return { x: e.clientX, y: e.clientY };
+}
+
+function cellFromPoint(x, y) {
+  const el = document.elementFromPoint(x, y);
+  if (!el) return null;
+  const cell = el.closest('.cell');
+  if (!cell) return null;
+  return { r: +cell.dataset.r, c: +cell.dataset.c };
+}
+
+boardEl.addEventListener('pointerdown', e => {
+  if (busy) return;
+  e.preventDefault();
+  const { x, y } = getPointerCoords(e);
+  const pos = cellFromPoint(x, y);
+  if (!pos) return;
+  dragStart = { ...pos, x, y };
+  draggingCell = pos;
+  const el = getCellEl(pos.r, pos.c);
+  if (el) el.classList.add('pressing');
+}, { passive: false });
+
+boardEl.addEventListener('pointermove', e => {
+  if (!dragStart || busy) return;
+  e.preventDefault();
+  const { x, y } = getPointerCoords(e);
+  const dx = x - dragStart.x;
+  const dy = y - dragStart.y;
+  if (Math.abs(dx) > SWIPE_THRESHOLD || Math.abs(dy) > SWIPE_THRESHOLD) {
+    const from = { r: dragStart.r, c: dragStart.c };
+    let to;
+    if (Math.abs(dx) >= Math.abs(dy)) {
+      to = { r: from.r, c: from.c + (dx > 0 ? 1 : -1) };
+    } else {
+      to = { r: from.r + (dy > 0 ? 1 : -1), c: from.c };
+    }
+    clearDragState();
+    if (to.r >= 0 && to.r < ROWS && to.c >= 0 && to.c < COLS) {
+      trySwap(from, to);
+    }
+  }
+}, { passive: false });
+
+boardEl.addEventListener('pointerup',     () => clearDragState(), { passive: false });
+boardEl.addEventListener('pointercancel', () => clearDragState(), { passive: false });
+
+function clearDragState() {
+  if (draggingCell) {
+    const el = getCellEl(draggingCell.r, draggingCell.c);
+    if (el) el.classList.remove('pressing');
+  }
+  dragStart = null;
+  draggingCell = null;
+}
+
+/* ─── Swap logic ─── */
+async function trySwap(a, b) {
+  busy = true;
+
+  // Check if either tile is a sun — activate if so
+  const aIsSun = board[a.r][a.c] === SUN;
+  const bIsSun = board[b.r][b.c] === SUN;
+
+  const animCells = {};
+  if (b.c > a.c)      { animCells[`${a.r},${a.c}`] = 'swap-right'; animCells[`${b.r},${b.c}`] = 'swap-left'; }
+  else if (b.c < a.c) { animCells[`${a.r},${a.c}`] = 'swap-left';  animCells[`${b.r},${b.c}`] = 'swap-right'; }
+  else if (b.r > a.r) { animCells[`${a.r},${a.c}`] = 'swap-down';  animCells[`${b.r},${b.c}`] = 'swap-up'; }
+  else                 { animCells[`${a.r},${a.c}`] = 'swap-up';    animCells[`${b.r},${b.c}`] = 'swap-down'; }
+  render(animCells);
+  await sleep(220);
+
+  [board[a.r][a.c], board[b.r][b.c]] = [board[b.r][b.c], board[a.r][a.c]];
+
+  // If sun was swapped, activate it (no match required)
+  if (aIsSun || bIsSun) {
+    const sunPos = aIsSun ? a : b;
+    moves--;
+    combo = 0;
+    render();
+    await activateSun(sunPos.r, sunPos.c);
+    checkGameState();
+    busy = false;
+    return;
+  }
+
+  if (findMatches().length === 0) {
+    [board[a.r][a.c], board[b.r][b.c]] = [board[b.r][b.c], board[a.r][a.c]];
+    render();
+    shakeCells(a, b);
+    busy = false;
+    return;
+  }
+
+  moves--;
+  combo = 0;
+  render();
+  await resolveMatches();
+  checkGameState();
+  busy = false;
+}
+
+/* ─── Sun diagonal activation ─── */
+async function activateSun(sr, sc) {
+  // Collect all cells on both diagonals through (sr, sc)
+  const diag = new Set();
+  for (let i = -Math.max(ROWS, COLS); i < Math.max(ROWS, COLS); i++) {
+    const r1 = sr + i, c1 = sc + i;
+    if (r1 >= 0 && r1 < ROWS && c1 >= 0 && c1 < COLS) diag.add(`${r1},${c1}`);
+    const r2 = sr + i, c2 = sc - i;
+    if (r2 >= 0 && r2 < ROWS && c2 >= 0 && c2 < COLS) diag.add(`${r2},${c2}`);
+  }
+  // Remove the sun itself — it goes with the rest
+  const cells = [...diag].map(s => { const [r,c]=s.split(','); return {r:+r,c:+c}; });
+
+  // Draw beam effect on canvas
+  await drawSunBeam(sr, sc);
+
+  // Stagger the clearing for flair
+  // Sort by distance from sun center so it ripples outward
+  cells.sort((a, b) => {
+    const da = Math.max(Math.abs(a.r - sr), Math.abs(a.c - sc));
+    const db = Math.max(Math.abs(b.r - sr), Math.abs(b.c - sc));
+    return da - db;
+  });
+
+  // Mark cells with sun-clear class in waves
+  let wave = 0;
+  for (const { r, c } of cells) {
+    const dist = Math.max(Math.abs(r - sr), Math.abs(c - sc));
+    if (dist > wave) {
+      wave = dist;
+      await sleep(60);
+    }
+    const el = getCellEl(r, c);
+    if (el) el.classList.add('sun-clear');
+    board[r][c] = null;
+  }
+
+  const sunPts = POINTS_SUN + cells.length * 30;
+  score += sunPts;
+  showScorePopup('☀️ +' + sunPts);
+  await sleep(580);
+
+  dropTiles();
+  render();
+  await sleep(100);
+  fillEmpty();
+  const dropAnim = {};
+  for (let r = 0; r < ROWS; r++)
+    for (let c = 0; c < COLS; c++)
+      if (board[r][c]) dropAnim[`${r},${c}`] = 'drop-in';
+  render(dropAnim);
+  await sleep(380);
+  render();
+  await resolveMatches();
+}
+
+/* ─── Sun beam canvas animation ─── */
+async function drawSunBeam(sr, sc) {
+  const canvas = sunBeamCanvas;
+  canvas.width  = window.innerWidth;
+  canvas.height = window.innerHeight;
+  canvas.style.display = 'block';
+  const ctx = canvas.getContext('2d');
+
+  // Find center pixel of the sun cell
+  const cellEl = getCellEl(sr, sc);
+  const rect = cellEl ? cellEl.getBoundingClientRect() : { left: 0, top: 0, width: 50, height: 50 };
+  const cx = rect.left + rect.width / 2;
+  const cy = rect.top  + rect.height / 2;
+
+  // Draw 4 diagonal beams expanding outward
+  const duration = 300;
+  const start = performance.now();
+
+  await new Promise(resolve => {
+    function frame(now) {
+      const t = Math.min(1, (now - start) / duration);
+      ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+      const dirs = [[1,1],[1,-1],[-1,1],[-1,-1]];
+      for (const [dr, dc] of dirs) {
+        const endX = cx + dc * canvas.width * t;
+        const endY = cy + dr * canvas.height * t;
+        const grad = ctx.createLinearGradient(cx, cy, endX, endY);
+        grad.addColorStop(0,   'rgba(255,230,0,0.9)');
+        grad.addColorStop(0.5, 'rgba(255,200,0,0.5)');
+        grad.addColorStop(1,   'rgba(255,200,0,0)');
+        ctx.beginPath();
+        ctx.moveTo(cx, cy);
+        ctx.lineTo(endX, endY);
+        ctx.strokeStyle = grad;
+        ctx.lineWidth = 18 * (1 - t * 0.5);
+        ctx.lineCap = 'round';
+        ctx.stroke();
+      }
+
+      // Glowing sun circle
+      const grd = ctx.createRadialGradient(cx, cy, 0, cx, cy, 50);
+      grd.addColorStop(0,   'rgba(255,255,200,0.95)');
+      grd.addColorStop(0.4, 'rgba(255,220,0,0.7)');
+      grd.addColorStop(1,   'rgba(255,150,0,0)');
+      ctx.beginPath();
+      ctx.arc(cx, cy, 50, 0, Math.PI * 2);
+      ctx.fillStyle = grd;
+      ctx.fill();
+
+      if (t < 1) requestAnimationFrame(frame);
+      else {
+        // Fade out
+        let opacity = 1;
+        const fade = setInterval(() => {
+          opacity -= 0.1;
+          ctx.globalAlpha = Math.max(0, opacity);
+          ctx.clearRect(0, 0, canvas.width, canvas.height);
+          if (opacity <= 0) {
+            clearInterval(fade);
+            canvas.style.display = 'none';
+            ctx.globalAlpha = 1;
+            resolve();
+          }
+        }, 20);
+      }
+    }
+    requestAnimationFrame(frame);
+  });
+}
+
+/* ─── Resolve normal matches ─── */
+async function resolveMatches() {
+  let matches = findMatches();
+  while (matches.length > 0) {
+    const gained = calcPoints(matches.length);
+    score += gained;
+    combo++;
+    if (combo >= 2) showCombo(combo);
+    showScorePopup('+' + gained);
+
+    for (const { r, c } of matches) {
+      const el = getCellEl(r, c);
+      if (el) el.classList.add('matched');
+      board[r][c] = null;
+    }
+    await sleep(420);
+
+    dropTiles();
+    render();
+    await sleep(100);
+
+    fillEmpty();
+    const dropAnim = {};
+    for (let r = 0; r < ROWS; r++)
+      for (let c = 0; c < COLS; c++)
+        if (board[r][c]) dropAnim[`${r},${c}`] = 'drop-in';
+    render(dropAnim);
+    await sleep(360);
+
+    render();
+    matches = findMatches();
+  }
+  combo = 0;
+}
+
+function dropTiles() {
+  for (let c = 0; c < COLS; c++) {
+    let empty = ROWS - 1;
+    for (let r = ROWS - 1; r >= 0; r--) {
+      if (board[r][c] !== null) {
+        board[empty][c] = board[r][c];
+        if (empty !== r) board[r][c] = null;
+        empty--;
+      }
+    }
+    for (let r = empty; r >= 0; r--) board[r][c] = null;
+  }
+}
+
+function fillEmpty() {
+  for (let r = 0; r < ROWS; r++) {
+    for (let c = 0; c < COLS; c++) {
+      if (board[r][c] === null) {
+        // Small chance to spawn a sun tile
+        board[r][c] = Math.random() < SUN_SPAWN_CHANCE ? SUN : HEARTS[rnd(HEARTS.length)];
+      }
+    }
+  }
+}
+
+/* ─── Visual feedback ─── */
+function showScorePopup(text) {
+  const el = document.createElement('div');
+  el.className = 'score-popup';
+  el.textContent = text;
+  el.style.left = (20 + Math.random() * 55) + '%';
+  el.style.top  = (20 + Math.random() * 50) + '%';
+  document.getElementById('board-wrapper').appendChild(el);
+  setTimeout(() => el.remove(), 1050);
+}
+
+function showCombo(n) {
+  const labels = ['','','DOBBELT! 🔥','TREDOBBELT! 💥','ULTRA! ⚡','WAHOO! 🌟','UHØRT! 🚀'];
+  const text = labels[Math.min(n, labels.length-1)] || `x${n} COMBO! 💫`;
+  comboFlash.textContent = text;
+  comboFlash.style.display = 'block';
+  comboFlash.style.animation = 'none';
+  void comboFlash.offsetWidth;
+  comboFlash.style.animation = 'combo-anim 0.8s ease forwards';
+  setTimeout(() => { comboFlash.style.display = 'none'; }, 900);
+}
+
+function shakeCells(a, b) {
+  [a, b].forEach(pos => {
+    const el = getCellEl(pos.r, pos.c);
+    if (!el) return;
+    el.style.animation = 'shake 0.3s ease';
+    el.addEventListener('animationend', () => el.style.animation = '', { once: true });
+  });
+}
+
+/* ─── Glimmer / confetti ─── */
+let confettiParticles = [];
+let confettiAnim = null;
+
+function launchConfetti() {
+  const canvas = confettiCanvas;
+  canvas.width  = window.innerWidth;
+  canvas.height = window.innerHeight;
+  canvas.style.display = 'block';
+  const ctx = canvas.getContext('2d');
+
+  const colors = ['#ff3d7f','#ffd700','#ff6eb4','#a855f7','#00e5ff','#ff9500','#ffffff','#aaff00'];
+  const shapes = ['circle','rect','star'];
+
+  confettiParticles = [];
+  for (let i = 0; i < 180; i++) {
+    confettiParticles.push({
+      x: Math.random() * canvas.width,
+      y: -20 - Math.random() * canvas.height * 0.5,
+      vx: (Math.random() - 0.5) * 3,
+      vy: 2 + Math.random() * 5,
+      size: 7 + Math.random() * 12,
+      color: colors[rnd(colors.length)],
+      shape: shapes[rnd(shapes.length)],
+      rot: Math.random() * Math.PI * 2,
+      rotV: (Math.random() - 0.5) * 0.2,
+      opacity: 1,
+      wave: Math.random() * Math.PI * 2,
+    });
+  }
+
+  if (confettiAnim) cancelAnimationFrame(confettiAnim);
+  const startTime = performance.now();
+  const duration = 4500;
+
+  function drawStar(ctx, x, y, r) {
+    ctx.beginPath();
+    for (let i = 0; i < 5; i++) {
+      const a = (i * 4 * Math.PI / 5) - Math.PI / 2;
+      const b = a + 2 * Math.PI / 5;
+      ctx.lineTo(x + r * Math.cos(a), y + r * Math.sin(a));
+      ctx.lineTo(x + (r/2) * Math.cos(b), y + (r/2) * Math.sin(b));
+    }
+    ctx.closePath();
+    ctx.fill();
+  }
+
+  function frame(now) {
+    const elapsed = now - startTime;
+    const progress = elapsed / duration;
+    ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+    for (const p of confettiParticles) {
+      p.x  += p.vx + Math.sin(p.wave + elapsed * 0.002) * 0.8;
+      p.y  += p.vy;
+      p.rot += p.rotV;
+      p.wave += 0.05;
+      p.vy  *= 0.999; // gentle terminal velocity
+
+      // Fade out in last 30%
+      p.opacity = progress > 0.7 ? 1 - (progress - 0.7) / 0.3 : 1;
+      if (p.opacity <= 0) continue;
+
+      ctx.save();
+      ctx.globalAlpha = p.opacity;
+      ctx.fillStyle = p.color;
+      ctx.translate(p.x, p.y);
+      ctx.rotate(p.rot);
+
+      if (p.shape === 'circle') {
+        ctx.beginPath();
+        ctx.arc(0, 0, p.size / 2, 0, Math.PI * 2);
+        ctx.fill();
+      } else if (p.shape === 'rect') {
+        ctx.fillRect(-p.size/2, -p.size/4, p.size, p.size/2);
+      } else {
+        drawStar(ctx, 0, 0, p.size / 2);
+      }
+      ctx.restore();
+    }
+
+    if (elapsed < duration) {
+      confettiAnim = requestAnimationFrame(frame);
+    } else {
+      canvas.style.display = 'none';
+      confettiParticles = [];
+    }
+  }
+
+  confettiAnim = requestAnimationFrame(frame);
+}
+
+/* ─── Game state ─── */
+function checkGameState() {
+  if (score >= target) {
+    launchConfetti();
+    setTimeout(() => showOverlay(true), 1800);
+  } else if (moves <= 0) {
+    showOverlay(false);
+  }
+}
+
+function showOverlay(win) {
+  const titleEl  = document.getElementById('overlay-title');
+  const starsEl  = document.getElementById('overlay-stars');
+  const scoreEl2 = document.getElementById('overlay-score');
+  if (win) {
+    titleEl.textContent = '🎉 Du vandt! 🎉';
+    titleEl.style.color = '#ffd700';
+    starsEl.textContent = score >= target * 1.5 ? '⭐⭐⭐' : score >= target * 1.2 ? '⭐⭐' : '⭐';
+  } else {
+    titleEl.textContent = '💔 Prøv igen!';
+    titleEl.style.color = '#ff3d7f';
+    starsEl.textContent = '😢';
+  }
+  scoreEl2.textContent = `Point: ${score} / ${target}`;
+  overlay.classList.add('show');
+}
+
+/* ─── Hint ─── */
+function showHint() {
+  if (busy) return;
+  // First highlight any sun tiles
+  for (let r = 0; r < ROWS; r++) {
+    for (let c = 0; c < COLS; c++) {
+      if (board[r][c] === SUN) {
+        const el = getCellEl(r, c);
+        if (el) {
+          el.style.boxShadow = '0 0 30px gold, 0 0 60px orange';
+          setTimeout(() => { el.style.boxShadow = ''; }, 1200);
+        }
+        return;
+      }
+    }
+  }
+  // Otherwise hint normal move
+  for (let r = 0; r < ROWS; r++) {
+    for (let c = 0; c < COLS; c++) {
+      for (const n of [{r:r-1,c},{r:r+1,c},{r,c:c-1},{r,c:c+1}]) {
+        if (n.r < 0 || n.r >= ROWS || n.c < 0 || n.c >= COLS) continue;
+        [board[r][c], board[n.r][n.c]] = [board[n.r][n.c], board[r][c]];
+        const m = findMatches().length;
+        [board[r][c], board[n.r][n.c]] = [board[n.r][n.c], board[r][c]];
+        if (m > 0) {
+          [getCellEl(r,c), getCellEl(n.r,n.c)].forEach(el => {
+            if (!el) return;
+            el.style.border = '3px solid gold';
+            el.style.boxShadow = '0 0 20px gold';
+            setTimeout(() => { el.style.border = ''; el.style.boxShadow = ''; }, 1200);
+          });
+          return;
+        }
+      }
+    }
+  }
+}
+
+/* ─── New game ─── */
+function newGame() {
+  score = 0; moves = 30; combo = 0;
+  target = [1000, 1500, 2000][rnd(3)];
+  overlay.classList.remove('show');
+  if (confettiAnim) { cancelAnimationFrame(confettiAnim); confettiCanvas.style.display = 'none'; }
+  initBoard();
+  render();
+}
+
+document.getElementById('btn-new').onclick     = newGame;
+document.getElementById('btn-hint').onclick    = showHint;
+document.getElementById('btn-restart').onclick = newGame;
+
+newGame();
+</script>
+</body>
+</html>
