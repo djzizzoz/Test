@@ -21,10 +21,7 @@
   html, body { height: 100%; overflow: hidden; }
 
   body {
-    background: var(--bg);
-    background-image:
-      radial-gradient(ellipse at 20% 10%, #3d0a5e 0%, transparent 50%),
-      radial-gradient(ellipse at 80% 90%, #5e0a3d 0%, transparent 50%);
+    background-color: #1a0a2e;
     display: flex;
     flex-direction: column;
     align-items: center;
@@ -35,7 +32,23 @@
     user-select: none;
     touch-action: none;
     gap: 10px;
+    transition: background-color 1.4s ease;
   }
+
+  /* Blurred gradient overlay — changes per level */
+  #bg-overlay {
+    position: fixed;
+    inset: 0;
+    pointer-events: none;
+    z-index: 0;
+    background-image:
+      radial-gradient(ellipse at 20% 10%, #3d0a5e 0%, transparent 50%),
+      radial-gradient(ellipse at 80% 90%, #5e0a3d 0%, transparent 50%);
+    transition: opacity 1.4s ease;
+  }
+
+  /* All game content sits above the bg overlay */
+  body > *:not(#bg-overlay) { position: relative; z-index: 1; }
 
   h1 {
     font-family: 'Fredoka One', cursive;
@@ -125,17 +138,15 @@
     position: relative;
   }
 
-  /* Sun joker cell gets special glow */
+  /* Sun joker cell — subtle gold glow, NO border/ring */
   .cell.sun-cell {
-    background: rgba(255, 220, 0, 0.12);
-    border-color: rgba(255,220,0,0.5);
-    box-shadow: 0 0 14px rgba(255,200,0,0.4);
+    background: rgba(255, 220, 0, 0.08);
     animation: sun-pulse 1.4s ease-in-out infinite;
   }
 
   @keyframes sun-pulse {
-    0%,100% { box-shadow: 0 0 14px rgba(255,200,0,0.4); }
-    50%      { box-shadow: 0 0 28px rgba(255,200,0,0.8), 0 0 8px rgba(255,255,100,0.6); }
+    0%,100% { filter: drop-shadow(0 0 6px rgba(255,210,0,0.5)); }
+    50%      { filter: drop-shadow(0 0 14px rgba(255,220,0,0.9)); }
   }
 
   .cell.pressing {
@@ -161,11 +172,22 @@
     100%{ transform:scale(0);   background:rgba(255,220,0,0.0); opacity:0; }
   }
 
-  .cell.drop-in { animation: drop 0.35s cubic-bezier(0.34,1.56,0.64,1) forwards; }
-  @keyframes drop {
-    0%  { transform:translateY(-80px) scale(0.7); opacity:0; }
-    100%{ transform:translateY(0) scale(1); opacity:1; }
-  }
+  .cell.drop-in { animation: drop 0.38s cubic-bezier(0.34,1.4,0.64,1) forwards; }
+  .cell.drop-in-1 { animation: drop1 0.38s cubic-bezier(0.34,1.4,0.64,1) forwards; }
+  .cell.drop-in-2 { animation: drop2 0.38s cubic-bezier(0.34,1.4,0.64,1) forwards; }
+  .cell.drop-in-3 { animation: drop3 0.38s cubic-bezier(0.34,1.4,0.64,1) forwards; }
+  .cell.drop-in-4 { animation: drop4 0.38s cubic-bezier(0.34,1.4,0.64,1) forwards; }
+  .cell.drop-in-5 { animation: drop5 0.38s cubic-bezier(0.34,1.4,0.64,1) forwards; }
+  .cell.drop-in-6 { animation: drop6 0.38s cubic-bezier(0.34,1.4,0.64,1) forwards; }
+
+  /* Each row starts slightly later so higher rows land after lower ones */
+  @keyframes drop  { 0%{transform:translateY(-50px);opacity:0}  100%{transform:translateY(0);opacity:1} }
+  @keyframes drop1 { 0%{transform:translateY(-110px);opacity:0} 100%{transform:translateY(0);opacity:1} }
+  @keyframes drop2 { 0%{transform:translateY(-170px);opacity:0} 100%{transform:translateY(0);opacity:1} }
+  @keyframes drop3 { 0%{transform:translateY(-230px);opacity:0} 100%{transform:translateY(0);opacity:1} }
+  @keyframes drop4 { 0%{transform:translateY(-290px);opacity:0} 100%{transform:translateY(0);opacity:1} }
+  @keyframes drop5 { 0%{transform:translateY(-350px);opacity:0} 100%{transform:translateY(0);opacity:1} }
+  @keyframes drop6 { 0%{transform:translateY(-410px);opacity:0} 100%{transform:translateY(0);opacity:1} }
 
   .cell.swap-right { animation: swapRight 0.2s ease forwards; }
   .cell.swap-left  { animation: swapLeft  0.2s ease forwards; }
@@ -230,33 +252,54 @@
 
   #overlay {
     display: none;
-    position: fixed; inset:0;
-    background: rgba(10,0,25,0.88);
-    backdrop-filter: blur(6px);
+    position: fixed; inset: 0;
+    background: var(--bg-solid, #1a0a2e);
     z-index: 100;
     align-items: center; justify-content: center;
-    flex-direction: column; gap:20px;
+    flex-direction: column; gap: 24px;
+    padding: 32px;
   }
   #overlay.show { display: flex; }
 
+  .overlay-card {
+    background: rgba(255,255,255,0.07);
+    border: 2px solid rgba(255,61,127,0.3);
+    border-radius: 24px;
+    padding: 32px 40px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 16px;
+    box-shadow: 0 0 60px rgba(255,61,127,0.2);
+    width: min(360px, 90vw);
+  }
+
   .overlay-title {
     font-family: 'Fredoka One', cursive;
-    font-size: clamp(2.2rem,7vw,4.5rem);
+    font-size: clamp(2rem, 7vw, 3.5rem);
     text-align: center;
+    line-height: 1.1;
   }
   .overlay-score {
     font-family: 'Fredoka One', cursive;
-    font-size: 1.8rem; color: var(--gold);
+    font-size: 1.5rem; color: var(--gold);
     text-shadow: 0 0 20px rgba(255,215,0,0.7);
   }
+  .overlay-level {
+    font-family: 'Fredoka One', cursive;
+    font-size: 1rem;
+    color: rgba(255,255,255,0.5);
+    letter-spacing: 2px;
+    text-transform: uppercase;
+  }
   .stars {
-    font-size: 2.8rem; letter-spacing:8px;
+    font-size: 2.5rem; letter-spacing: 6px;
     animation: star-pop 0.6s ease forwards;
   }
   @keyframes star-pop {
-    0%  { transform:scale(0); }
-    80% { transform:scale(1.2); }
-    100%{ transform:scale(1); }
+    0%  { transform: scale(0); }
+    80% { transform: scale(1.2); }
+    100%{ transform: scale(1); }
   }
 
   /* ── Confetti canvas ── */
@@ -294,6 +337,7 @@
 </head>
 <body>
 
+<div id="bg-overlay"></div>
 <h1>❤️ Hjerte Crush</h1>
 
 <div class="hud">
@@ -325,12 +369,15 @@
 </div>
 
 <div id="overlay">
-  <div class="overlay-title" id="overlay-title"></div>
-  <div class="stars" id="overlay-stars"></div>
-  <div class="overlay-score" id="overlay-score"></div>
-  <button id="btn-restart" style="background:linear-gradient(135deg,#ff3d7f,#ff006e);color:white;box-shadow:0 4px 20px rgba(255,61,127,0.5);font-size:1.1rem;padding:12px 32px;">
-    Spil igen ❤️
-  </button>
+  <div class="overlay-card">
+    <div class="overlay-level" id="overlay-level">Level 1</div>
+    <div class="overlay-title" id="overlay-title"></div>
+    <div class="stars" id="overlay-stars"></div>
+    <div class="overlay-score" id="overlay-score"></div>
+    <button id="btn-restart" style="background:linear-gradient(135deg,#ff3d7f,#ff006e);color:white;box-shadow:0 4px 20px rgba(255,61,127,0.5);font-size:1.1rem;padding:14px 40px;margin-top:8px;border-radius:50px;border:none;font-family:'Fredoka One',cursive;cursor:pointer;">
+      Spil igen ❤️
+    </button>
+  </div>
 </div>
 
 <div id="combo-flash"></div>
@@ -346,8 +393,38 @@ const POINTS_3 = 60, POINTS_4 = 120, POINTS_5 = 250, POINTS_SUN = 400;
 const SWIPE_THRESHOLD = 12;
 
 let board = [], score = 0, moves = 30, target = 1000;
-let busy = false, combo = 0;
+let busy = false, gameEnded = false, combo = 0, level = 1;
 let dragStart = null, draggingCell = null;
+
+// Feminine gradient themes — one per level (cycles after last)
+const LEVEL_THEMES = [
+  // Level 1 — deep purple (start)
+  { bg: '#1a0a2e', g1: '#3d0a5e', g1pos: '20% 10%', g2: '#5e0a3d', g2pos: '80% 90%' },
+  // Level 2 — rose pink
+  { bg: '#2a0a1a', g1: '#6e1040', g1pos: '15% 15%', g2: '#8b0050', g2pos: '85% 80%' },
+  // Level 3 — lavender violet
+  { bg: '#170a2e', g1: '#4a1a7a', g1pos: '80% 10%', g2: '#2d0a5e', g2pos: '10% 90%' },
+  // Level 4 — deep magenta
+  { bg: '#220a22', g1: '#6b0a6b', g1pos: '50% 5%',  g2: '#3d0a50', g2pos: '50% 95%' },
+  // Level 5 — midnight orchid
+  { bg: '#0e0a2a', g1: '#5e1080', g1pos: '30% 20%', g2: '#8b1060', g2pos: '70% 80%' },
+  // Level 6 — dusty rose
+  { bg: '#2a1218', g1: '#7a2040', g1pos: '60% 10%', g2: '#501028', g2pos: '20% 85%' },
+  // Level 7 — plum
+  { bg: '#1e0a28', g1: '#5a0a70', g1pos: '25% 30%', g2: '#701048', g2pos: '75% 70%' },
+  // Level 8 — burgundy blush
+  { bg: '#260a14', g1: '#78103c', g1pos: '70% 20%', g2: '#4a0a30', g2pos: '30% 80%' },
+];
+
+function applyLevelBackground(lvl) {
+  const theme = LEVEL_THEMES[(lvl - 1) % LEVEL_THEMES.length];
+  document.body.style.backgroundColor = theme.bg;
+  const overlay = document.getElementById('bg-overlay');
+  overlay.style.backgroundImage = `
+    radial-gradient(ellipse at ${theme.g1pos}, ${theme.g1} 0%, transparent 55%),
+    radial-gradient(ellipse at ${theme.g2pos}, ${theme.g2} 0%, transparent 55%)
+  `;
+}
 
 const boardEl    = document.getElementById('board');
 const scoreEl    = document.getElementById('score-display');
@@ -472,7 +549,7 @@ function cellFromPoint(x, y) {
 }
 
 boardEl.addEventListener('pointerdown', e => {
-  if (busy) return;
+  if (busy || gameEnded) return;
   e.preventDefault();
   const { x, y } = getPointerCoords(e);
   const pos = cellFromPoint(x, y);
@@ -542,7 +619,7 @@ async function trySwap(a, b) {
     render();
     await activateSun(sunPos.r, sunPos.c);
     checkGameState();
-    busy = false;
+    if (!gameEnded) busy = false;
     return;
   }
 
@@ -559,7 +636,7 @@ async function trySwap(a, b) {
   render();
   await resolveMatches();
   checkGameState();
-  busy = false;
+  if (!gameEnded) busy = false;
 }
 
 /* ─── Sun diagonal activation ─── */
@@ -607,11 +684,9 @@ async function activateSun(sr, sc) {
   dropTiles();
   render();
   await sleep(100);
-  fillEmpty();
+  const newCells = fillEmpty();
   const dropAnim = {};
-  for (let r = 0; r < ROWS; r++)
-    for (let c = 0; c < COLS; c++)
-      if (board[r][c]) dropAnim[`${r},${c}`] = 'drop-in';
+  for (const [key, row] of newCells) dropAnim[key] = row === 0 ? 'drop-in-6' : `drop-in-${ROWS - 1 - row}`;
   render(dropAnim);
   await sleep(380);
   render();
@@ -710,11 +785,9 @@ async function resolveMatches() {
     render();
     await sleep(100);
 
-    fillEmpty();
+    const newCells = fillEmpty();
     const dropAnim = {};
-    for (let r = 0; r < ROWS; r++)
-      for (let c = 0; c < COLS; c++)
-        if (board[r][c]) dropAnim[`${r},${c}`] = 'drop-in';
+    for (const [key, row] of newCells) dropAnim[key] = row === 0 ? 'drop-in-6' : `drop-in-${ROWS - 1 - row}`;
     render(dropAnim);
     await sleep(360);
 
@@ -738,15 +811,18 @@ function dropTiles() {
   }
 }
 
+// Returns map of "r,c" -> row for newly filled cells
 function fillEmpty() {
+  const newCells = new Map();
   for (let r = 0; r < ROWS; r++) {
     for (let c = 0; c < COLS; c++) {
       if (board[r][c] === null) {
-        // Small chance to spawn a sun tile
         board[r][c] = Math.random() < SUN_SPAWN_CHANCE ? SUN : HEARTS[rnd(HEARTS.length)];
+        newCells.set(`${r},${c}`, r);
       }
     }
   }
+  return newCells;
 }
 
 /* ─── Visual feedback ─── */
@@ -875,22 +951,39 @@ function launchConfetti() {
 /* ─── Game state ─── */
 function checkGameState() {
   if (score >= target) {
+    gameEnded = true;
+    busy = true;
     launchConfetti();
-    setTimeout(() => showOverlay(true), 1800);
+    showOverlay(true);
   } else if (moves <= 0) {
+    gameEnded = true;
+    busy = true;
     showOverlay(false);
   }
 }
 
 function showOverlay(win) {
+  overlay._lastWin = win;
   const titleEl  = document.getElementById('overlay-title');
   const starsEl  = document.getElementById('overlay-stars');
   const scoreEl2 = document.getElementById('overlay-score');
+  const levelEl  = document.getElementById('overlay-level');
+
+  // Match overlay bg to current level theme so it looks seamless
+  const theme = LEVEL_THEMES[(level - 1) % LEVEL_THEMES.length];
+  overlay.style.background = theme.bg;
+  overlay.style.backgroundImage = `
+    radial-gradient(ellipse at ${theme.g1pos}, ${theme.g1} 0%, transparent 55%),
+    radial-gradient(ellipse at ${theme.g2pos}, ${theme.g2} 0%, transparent 55%)
+  `;
+
   if (win) {
-    titleEl.textContent = '🎉 Du vandt! 🎉';
+    levelEl.textContent = `Level ${level} gennemført!`;
+    titleEl.textContent = '🎉 Næste Level! 🎉';
     titleEl.style.color = '#ffd700';
     starsEl.textContent = score >= target * 1.5 ? '⭐⭐⭐' : score >= target * 1.2 ? '⭐⭐' : '⭐';
   } else {
+    levelEl.textContent = `Level ${level}`;
     titleEl.textContent = '💔 Prøv igen!';
     titleEl.style.color = '#ff3d7f';
     starsEl.textContent = '😢';
@@ -938,20 +1031,28 @@ function showHint() {
 }
 
 /* ─── New game ─── */
-function newGame() {
-  score = 0; moves = 30; combo = 0;
-  target = [1000, 1500, 2000][rnd(3)];
+function newGame(win = false) {
+  if (win) {
+    level++;
+  } else {
+    level = 1; // reset on loss
+  }
+  score = 0; moves = 30; combo = 0; busy = false; gameEnded = false;
+  // Target scales with level
+  target = 1000 + (level - 1) * 300;
   overlay.classList.remove('show');
   if (confettiAnim) { cancelAnimationFrame(confettiAnim); confettiCanvas.style.display = 'none'; }
+  applyLevelBackground(level);
   initBoard();
   render();
 }
 
-document.getElementById('btn-new').onclick     = newGame;
+document.getElementById('btn-new').onclick     = () => newGame(false);
 document.getElementById('btn-hint').onclick    = showHint;
-document.getElementById('btn-restart').onclick = newGame;
+document.getElementById('btn-restart').onclick = () => newGame(overlay._lastWin === true);
 
-newGame();
+applyLevelBackground(level);
+newGame(false);
 </script>
 </body>
 </html>
